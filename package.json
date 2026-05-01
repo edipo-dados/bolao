@@ -1,0 +1,15 @@
+{
+  "name": "bolao-futebol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma de gerenciamento de bolões de futebol",
+  "scripts": {
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "setup": "npm run setup:backend && npm run setup:frontend",
+    "setup:backend": "cd backend && npm install && npx prisma generate",
+    "setup:frontend": "cd frontend && npm install"
+  }
+}

@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-fifa-black text-fifa-white antialiased font-sans;
+  }
+  ::selection {
+    @apply bg-gold-500/30 text-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-white text-fifa-black px-5 py-2.5 rounded-full font-semibold text-sm
+           hover:bg-fifa-light transition-all duration-200 disabled:opacity-40
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-fifa-white px-5 py-2.5 rounded-full font-semibold text-sm
+           border border-fifa-border hover:border-fifa-text hover:bg-fifa-card
+           transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-gold {
+    @apply bg-gold-400 text-fifa-black px-5 py-2.5 rounded-full font-bold text-sm
+           hover:bg-gold-300 transition-all duration-200 shadow-glow-gold
+           hover:shadow-glow-gold-lg;
+  }
+
+  .btn-danger {
+    @apply bg-accent-red/10 text-accent-red px-5 py-2.5 rounded-full font-semibold text-sm
+           border border-accent-red/20 hover:bg-accent-red/20 transition-all duration-200;
+  }
+
+  .btn-success {
+    @apply bg-accent-green/10 text-accent-green px-5 py-2.5 rounded-full font-semibold text-sm
+           border border-accent-green/20 hover:bg-accent-green/20 transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-fifa-dark border border-fifa-border rounded-lg
+           text-fifa-white placeholder-fifa-muted text-sm
+           focus:outline-none focus:border-gold-400/50 focus:ring-1 focus:ring-gold-400/20
+           transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-fifa-card rounded-xl border border-fifa-border p-5
+           shadow-card transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply card hover:border-fifa-muted hover:shadow-card-hover;
+  }
+
+  .badge {
+    @apply text-xs font-semibold px-2.5 py-1 rounded-full;
+  }
+
+  .badge-gold {
+    @apply badge bg-gold-400/10 text-gold-400 border border-gold-400/20;
+  }
+
+  .badge-green {
+    @apply badge bg-accent-green/10 text-accent-green border border-accent-green/20;
+  }
+
+  .badge-red {
+    @apply badge bg-accent-red/10 text-accent-red border border-accent-red/20;
+  }
+
+  .badge-blue {
+    @apply badge bg-accent-blue/10 text-accent-blue border border-accent-blue/20;
+  }
+
+  .divider {
+    @apply border-t border-fifa-border;
+  }
+}

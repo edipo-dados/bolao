@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  USER
+  SUPER_ADMIN
+}
+
+enum PoolType {
+  PUBLIC
+  PRIVATE
+}
+
+enum ParticipantRole {
+  MEMBER
+  ADMIN
+}
+
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  password       String
+  role           UserRole @default(USER)
+  avatarUrl      String?
+  resetToken     String?
+  resetTokenExp  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pools          PoolParticipant[]
+  predictions    Prediction[]
+  createdPools   Pool[]            @relation("PoolCreator")
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+model League {
+  id          String   @id @default(uuid())
+  externalId  Int      @unique
+  name        String
+  country     String?
+  logo        String?
+  season      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  matches     Match[]
+  pools       Pool[]
+
+  @@map("leagues")
+}
+
+model Pool {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  type         PoolType @default(PUBLIC)
+  inviteCode   String   @unique @default(uuid())
+  pixKey       String?
+  pixName      String?
+  entryFee     String?
+  contactPhone String?
+  contactEmail String?
+  creatorId    String
+  leagueId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  creator      User             @relation("PoolCreator", fields: [creatorId], references: [id])
+  league       League           @relation(fields: [leagueId], references: [id])
+  participants PoolParticipant[]
+  rules        PoolRule[]
+  tiebreakers  Tiebreaker[]
+
+  @@map("pools")
+}
+
+model PoolParticipant {
+  id        String            @id @default(uuid())
+  userId    String
+  poolId    String
+  role      ParticipantRole   @default(MEMBER)
+  status    ParticipantStatus @default(PENDING)
+  joinedAt  DateTime          @default(now())
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pool      Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poolId])
+  @@map("pool_participants")
+}
+
+model PoolRule {
+  id          String @id @default(uuid())
+  poolId      String
+  name        String
+  description String?
+  points      Int
+
+  pool        Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@map("pool_rules")
+}
+
+model Tiebreaker {
+  id       String @id @default(uuid())
+  poolId   String
+  criteria String
+  priority Int
+
+  pool     Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@map("tiebreakers")
+}
+
+model Match {
+  id            String      @id @default(uuid())
+  externalId    Int         @unique
+  leagueId      String
+  homeTeam      String
+  awayTeam      String
+  homeTeamLogo  String?
+  awayTeamLogo  String?
+  homeScore     Int?
+  awayScore     Int?
+  round         String?
+  status        MatchStatus @default(SCHEDULED)
+  matchDate     DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  league        League       @relation(fields: [leagueId], references: [id])
+  predictions   Prediction[]
+
+  @@map("matches")
+}
+
+model Prediction {
+  id          String   @id @default(uuid())
+  userId      String
+  matchId     String
+  poolId      String
+  homeScore   Int
+  awayScore   Int
+  points      Int      @default(0)
+  calculated  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match       Match @relation(fields: [matchId], references: [id])
+
+  @@unique([userId, matchId, poolId])
+  @@map("predictions")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  user      User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
