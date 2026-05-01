@@ -82,27 +82,27 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="relative overflow-hidden py-20 sm:py-28 text-center">
-        <div className="absolute inset-0 pointer-events-none">
+      <div className="relative overflow-hidden py-12 sm:py-20 md:py-28 text-center">
+        <div className="absolute inset-0 pointer-events-none hidden sm:block">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-gold-400/10 rounded-full" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-gold-400/5 rounded-full" />
           <div className="absolute top-0 right-0 w-72 h-72 bg-gold-400/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-56 h-56 bg-gold-400/3 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative">
-          <p className="text-gold-400 text-sm font-medium tracking-widest uppercase mb-3">
+        <div className="relative px-2">
+          <p className="text-gold-400 text-xs sm:text-sm font-medium tracking-widest uppercase mb-2 sm:mb-3">
             Ame o futebol. Ganhe pontos.
           </p>
-          <h1 className="text-5xl sm:text-6xl font-black text-white mb-4 tracking-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white mb-3 sm:mb-4 tracking-tight">
             Bem-vindos
           </h1>
-          <p className="text-fifa-text text-base max-w-xl mx-auto mb-10 leading-relaxed">
+          <p className="text-fifa-text text-sm sm:text-base max-w-xl mx-auto mb-6 sm:mb-10 leading-relaxed">
             Compita em bolões, dê seus palpites e acompanhe o ranking em tempo real.
             Tudo sobre futebol em uma única experiência.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 px-4 sm:px-0">
             {user ? (
               <>
                 <Link href="/my-pools" className="btn-primary px-8 py-3 text-sm">

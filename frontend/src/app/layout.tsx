@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import './globals.css';
@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   description: 'Plataforma de gerenciamento de bolões de futebol',
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#0a0a0a',
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -15,10 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className="bg-fifa-black min-h-screen">
+      <body className="bg-fifa-black min-h-screen overflow-x-hidden">
         <AuthProvider>
           <Navbar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
             {children}
           </main>
         </AuthProvider>
