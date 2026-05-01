@@ -537,62 +537,99 @@ function UsersTab() {
 
 // ==================== BOLÕES ====================
 function PoolsTab() {
-  const [data, setData] = useState<any>({ pools: [], total: 0 });
+  const [pools, setPools] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  const loadPools = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getAdminPools();
+      setPools(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    api.getAdminPools().then(setData).catch(console.error);
+    loadPools();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Remover este bolão?')) return;
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Remover o bolão "${name}"? Esta ação é irreversível.`)) return;
     try {
       await api.deleteAdminPool(id);
-      setData({
-        ...data,
-        pools: data.pools.filter((p: any) => p.id !== id),
-        total: data.total - 1,
-      });
+      setPools(pools.filter((p) => p.id !== id));
     } catch (err: any) {
       alert(err.message);
     }
   };
 
+  const filtered = search
+    ? pools.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    : pools;
+
   return (
-    <div className="card overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="text-left text-sm text-gray-500 border-b">
-            <th className="pb-3">Nome</th>
-            <th className="pb-3">Criador</th>
-            <th className="pb-3">Liga</th>
-            <th className="pb-3">Tipo</th>
-            <th className="pb-3">Participantes</th>
-            <th className="pb-3">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.pools.map((p: any) => (
-            <tr key={p.id} className="border-b last:border-0">
-              <td className="py-3 font-medium">{p.name}</td>
-              <td className="py-3 text-sm text-gray-500">{p.creator?.name}</td>
-              <td className="py-3 text-sm">{p.league?.name}</td>
-              <td className="py-3">
-                <span className="text-xs">{p.type === 'PUBLIC' ? '🌐' : '🔒'}</span>
-              </td>
-              <td className="py-3 text-sm">{p._count?.participants || 0}</td>
-              <td className="py-3">
-                <button
-                  onClick={() => handleDelete(p.id)}
-                  className="text-red-500 hover:text-red-700 text-sm"
-                >
-                  Remover
-                </button>
-              </td>
-            </tr>
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          placeholder="Buscar bolão..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input-field flex-1"
+        />
+        <span className="text-xs text-fifa-muted">{filtered.length} bolão(ões)</span>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8 text-fifa-muted">Carregando...</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-8 text-fifa-muted">Nenhum bolão encontrado</div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((p: any) => (
+            <div key={p.id} className="card py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm text-fifa-white">{p.name}</span>
+                    <span className={`badge text-[10px] ${p.type === 'PUBLIC' ? 'badge-green' : 'badge-red'}`}>
+                      {p.type === 'PUBLIC' ? '🌐 Público' : '🔒 Privado'}
+                    </span>
+                    {p.entryFee && <span className="badge-gold text-[10px]">💰 {p.entryFee}</span>}
+                  </div>
+                  <div className="text-xs text-fifa-muted mt-1">
+                    {p.league?.name} • Criado por {p.creator?.name} • {p._count?.participants || 0} participantes
+                  </div>
+                  {p.pixKey && (
+                    <div className="text-xs text-fifa-muted mt-0.5">
+                      PIX: {p.pixKey}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <a
+                    href={`/pools/${p.id}`}
+                    target="_blank"
+                    className="btn-secondary text-xs py-1 px-3"
+                  >
+                    👁 Ver
+                  </a>
+                  <button
+                    onClick={() => handleDelete(p.id, p.name)}
+                    className="btn-danger text-xs py-1 px-3"
+                  >
+                    🗑 Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
-      <div className="text-sm text-gray-500 mt-4">Total: {data.total} bolões</div>
+        </div>
+      )}
     </div>
   );
 }

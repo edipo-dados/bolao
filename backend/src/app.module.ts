@@ -10,6 +10,7 @@ import { PredictionsModule } from './predictions/predictions.module';
 import { RankingModule } from './ranking/ranking.module';
 import { FootballModule } from './football/football.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
     RankingModule,
     FootballModule,
     AdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

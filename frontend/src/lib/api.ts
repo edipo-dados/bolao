@@ -227,6 +227,27 @@ class ApiClient {
     return this.request<any[]>(`/ranking/pool/${poolId}/predictions`);
   }
 
+  // Notifications
+  async getNotifications() {
+    return this.request<any[]>('/notifications');
+  }
+
+  async getUnreadNotifications() {
+    return this.request<any[]>('/notifications/unread');
+  }
+
+  async getNotificationCount() {
+    return this.request<number>('/notifications/count');
+  }
+
+  async markNotificationRead(id: string) {
+    return this.request(`/notifications/${id}/read`, { method: 'POST' });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/read-all', { method: 'POST' });
+  }
+
   // Admin
   async getAdminDashboard() {
     return this.request<any>('/admin/dashboard');
@@ -241,7 +262,7 @@ class ApiClient {
   }
 
   async getAdminPools(page = 1) {
-    return this.request<any>(`/admin/pools?page=${page}`);
+    return this.request<any[]>(`/admin/pools`);
   }
 
   async deleteAdminPool(id: string) {

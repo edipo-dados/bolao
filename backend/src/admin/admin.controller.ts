@@ -62,12 +62,21 @@ export class AdminController {
   }
 
   @Get('pools')
-  @ApiOperation({ summary: 'Listar todos os bolões' })
-  getPools(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.adminService.getPools(
-      page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 20,
-    );
+  @ApiOperation({ summary: 'Listar todos os bolões (públicos e privados)' })
+  getPools(@Query('search') search?: string) {
+    return this.poolsService.findAllAdmin({ search: search || undefined });
+  }
+
+  @Get('pools/:id')
+  @ApiOperation({ summary: 'Detalhes do bolão (admin)' })
+  getPool(@Param('id') id: string) {
+    return this.poolsService.findById(id);
+  }
+
+  @Put('pools/:id')
+  @ApiOperation({ summary: 'Editar bolão (admin)' })
+  updatePool(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: any) {
+    return this.poolsService.update(id, user.id, dto);
   }
 
   @Delete('pools/:id')

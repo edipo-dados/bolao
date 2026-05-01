@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePoolDto } from './dto/create-pool.dto';
 import { UpdatePoolDto } from './dto/update-pool.dto';
 
@@ -23,7 +24,10 @@ const DEFAULT_TIEBREAKERS = [
 
 @Injectable()
 export class PoolsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async create(userId: string, dto: CreatePoolDto) {
     const pool = await this.prisma.pool.create({
@@ -69,6 +73,24 @@ export class PoolsService {
     if (filters?.leagueId) {
       where.leagueId = filters.leagueId;
     }
+    if (filters?.search) {
+      where.name = { contains: filters.search, mode: 'insensitive' };
+    }
+
+    return this.prisma.pool.findMany({
+      where,
+      include: {
+        league: true,
+        creator: { select: { id: true, name: true } },
+        _count: { select: { participants: { where: { status: 'APPROVED' } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /** Super admin: todos os bolões sem filtro */
+  async findAllAdmin(filters?: { search?: string }) {
+    const where: any = {};
     if (filters?.search) {
       where.name = { contains: filters.search, mode: 'insensitive' };
     }
@@ -180,27 +202,62 @@ export class PoolsService {
       throw new ConflictException('Você já solicitou entrada neste bolão');
     }
 
-    return this.prisma.poolParticipant.create({
+    const participant = await this.prisma.poolParticipant.create({
       data: { userId, poolId, status: 'PENDING' },
     });
+
+    // Notificar admins do bolão
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    const pool = await this.prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } });
+    await this.notifications.notifyPoolAdmins(
+      poolId,
+      'JOIN_REQUEST',
+      'Nova solicitação de entrada',
+      `${user?.name || 'Alguém'} quer entrar no bolão "${pool?.name || ''}"`,
+    );
+
+    return participant;
   }
 
   async approveParticipant(poolId: string, participantId: string, adminUserId: string) {
     await this.ensurePoolAdmin(poolId, adminUserId);
 
-    return this.prisma.poolParticipant.update({
+    const participant = await this.prisma.poolParticipant.update({
       where: { id: participantId },
       data: { status: 'APPROVED' },
     });
+
+    // Notificar o usuário aprovado
+    const pool = await this.prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } });
+    await this.notifications.create({
+      userId: participant.userId,
+      type: 'JOIN_APPROVED',
+      title: 'Entrada aprovada! ✅',
+      message: `Você foi aprovado no bolão "${pool?.name || ''}"`,
+      link: `/pools/${poolId}`,
+    });
+
+    return participant;
   }
 
   async rejectParticipant(poolId: string, participantId: string, adminUserId: string) {
     await this.ensurePoolAdmin(poolId, adminUserId);
 
-    return this.prisma.poolParticipant.update({
+    const participant = await this.prisma.poolParticipant.update({
       where: { id: participantId },
       data: { status: 'REJECTED' },
     });
+
+    // Notificar o usuário rejeitado
+    const pool = await this.prisma.pool.findUnique({ where: { id: poolId }, select: { name: true } });
+    await this.notifications.create({
+      userId: participant.userId,
+      type: 'JOIN_REJECTED',
+      title: 'Solicitação recusada',
+      message: `Sua solicitação para o bolão "${pool?.name || ''}" foi recusada`,
+    });
+
+    return participant;
   }
 
   async leavePool(poolId: string, userId: string) {
