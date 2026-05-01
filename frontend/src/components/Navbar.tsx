@@ -28,16 +28,20 @@ function NotificationBell() {
   const loadCount = async () => {
     try {
       const c = await api.getNotificationCount();
-      setCount(c);
-    } catch {}
+      setCount(typeof c === 'number' ? c : 0);
+    } catch {
+      // Silenciar — backend pode estar dormindo
+    }
   };
 
   const handleOpen = async () => {
     if (!open) {
       try {
         const data = await api.getUnreadNotifications();
-        setNotifications(data);
-      } catch {}
+        setNotifications(Array.isArray(data) ? data : []);
+      } catch {
+        setNotifications([]);
+      }
     }
     setOpen(!open);
   };
