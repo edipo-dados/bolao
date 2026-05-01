@@ -202,7 +202,7 @@ export default function PoolDetailPage() {
 
   useEffect(() => {
     if (pool) loadTabData();
-  }, [tab, pool]);
+  }, [tab, pool, isAdmin]);
 
   const loadPool = async () => {
     try {
@@ -211,7 +211,8 @@ export default function PoolDetailPage() {
 
       if (user) {
         const participant = data.participants?.find((p: any) => p.user.id === user.id);
-        setIsAdmin(participant?.role === 'ADMIN' && participant?.status === 'APPROVED');
+        const adminStatus = participant?.role === 'ADMIN' && participant?.status === 'APPROVED';
+        setIsAdmin(adminStatus);
         setIsMember(participant?.status === 'APPROVED');
       }
     } catch (err) {
@@ -226,7 +227,6 @@ export default function PoolDetailPage() {
     try {
       switch (tab) {
         case 'matches':
-          // MatchesTab gerencia seus próprios filtros e carregamento
           break;
         case 'ranking':
           const r = await api.getRanking(pool.id);
@@ -239,9 +239,12 @@ export default function PoolDetailPage() {
           }
           break;
         case 'participants':
-          if (isAdmin) {
+          // Sempre tenta carregar pendentes se for admin
+          try {
             const pend = await api.getPendingParticipants(pool.id);
             setPending(pend);
+          } catch {
+            setPending([]);
           }
           break;
       }
@@ -902,33 +905,37 @@ function ParticipantsTab({
   onReject: (id: string) => void;
 }) {
   const approved = participants?.filter((p: any) => p.status === 'APPROVED') || [];
+  // Pendentes: usar do endpoint OU filtrar dos participantes do pool
+  const pendingList = pending.length > 0
+    ? pending
+    : participants?.filter((p: any) => p.status === 'PENDING') || [];
 
   return (
     <div className="space-y-6">
-      {isAdmin && pending.length > 0 && (
+      {isAdmin && pendingList.length > 0 && (
         <div>
-          <h3 className="font-semibold mb-3 text-yellow-700">
-            ⏳ Pendentes ({pending.length})
+          <h3 className="font-semibold mb-3 text-gold-400">
+            ⏳ Aguardando aprovação ({pendingList.length})
           </h3>
           <div className="space-y-2">
-            {pending.map((p) => (
+            {pendingList.map((p: any) => (
               <div key={p.id} className="card flex items-center justify-between py-3">
                 <div>
-                  <span className="font-medium">{p.user.name}</span>
-                  <span className="text-sm text-gray-500 ml-2">{p.user.email}</span>
+                  <span className="font-medium text-fifa-white">{p.user?.name || p.user}</span>
+                  <span className="text-sm text-fifa-muted ml-2">{p.user?.email || ''}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => onApprove(p.id)}
                     className="btn-success text-xs py-1 px-3"
                   >
-                    Aprovar
+                    ✅ Aprovar
                   </button>
                   <button
                     onClick={() => onReject(p.id)}
                     className="btn-danger text-xs py-1 px-3"
                   >
-                    Rejeitar
+                    ❌ Rejeitar
                   </button>
                 </div>
               </div>
@@ -937,21 +944,25 @@ function ParticipantsTab({
         </div>
       )}
 
+      {isAdmin && pendingList.length === 0 && (
+        <div className="card py-4 text-center text-fifa-muted text-sm">
+          Nenhuma solicitação pendente
+        </div>
+      )}
+
       <div>
-        <h3 className="font-semibold mb-3">👥 Participantes ({approved.length})</h3>
+        <h3 className="font-semibold mb-3 text-fifa-white">👥 Participantes ({approved.length})</h3>
         <div className="space-y-2">
           {approved.map((p: any) => (
             <div key={p.id} className="card flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-medium text-sm">
-                  {p.user.name.charAt(0).toUpperCase()}
+                <span className="w-8 h-8 bg-gold-400 text-fifa-black rounded-full flex items-center justify-center font-bold text-sm">
+                  {(p.user?.name || '?').charAt(0).toUpperCase()}
                 </span>
-                <span className="font-medium">{p.user.name}</span>
+                <span className="font-medium text-fifa-white">{p.user?.name || 'Usuário'}</span>
               </div>
               {p.role === 'ADMIN' && (
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
-                  Admin
-                </span>
+                <span className="badge-gold text-[10px]">Admin</span>
               )}
             </div>
           ))}
