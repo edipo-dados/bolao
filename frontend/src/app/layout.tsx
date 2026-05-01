@@ -5,7 +5,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Bolão Futebol',
-  description: 'Plataforma de gerenciamento de bolões de futebol',
+  description: 'Plataforma de gerenciamento de bolões de futebol - Palpites, Rankings e Resultados em tempo real',
 };
 
 export const viewport: Viewport = {
