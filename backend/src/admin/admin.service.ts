@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -86,5 +87,28 @@ export class AdminService {
 
   async deleteUser(id: string) {
     return this.prisma.user.delete({ where: { id } });
+  }
+
+  async resetUserPassword(id: string) {
+    // Gerar senha temporária de 8 caracteres
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let tempPassword = '';
+    for (let i = 0; i < 8; i++) {
+      tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        password: hashedPassword,
+        mustChangePassword: true,
+        resetToken: null,
+        resetTokenExp: null,
+      },
+    });
+
+    return { tempPassword };
   }
 }

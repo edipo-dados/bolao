@@ -8,6 +8,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  clearMustChange: () => void;
   isAdmin: boolean;
 }
 
@@ -58,6 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/';
   };
 
+  const clearMustChange = () => {
+    if (user) setUser({ ...user, mustChangePassword: false });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -66,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        clearMustChange,
         isAdmin: user?.role === 'SUPER_ADMIN',
       }}
     >

@@ -61,6 +61,12 @@ export class AdminController {
     return this.adminService.deleteUser(id);
   }
 
+  @Post('users/:id/reset-password')
+  @ApiOperation({ summary: 'Resetar senha do usuário (gera senha temporária)' })
+  async resetUserPassword(@Param('id') id: string) {
+    return this.adminService.resetUserPassword(id);
+  }
+
   @Get('pools')
   @ApiOperation({ summary: 'Listar todos os bolões (públicos e privados)' })
   getPools(@Query('search') search?: string) {

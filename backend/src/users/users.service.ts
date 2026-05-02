@@ -50,6 +50,7 @@ export class UsersService {
         email: true,
         role: true,
         avatarUrl: true,
+        mustChangePassword: true,
         createdAt: true,
         _count: {
           select: {

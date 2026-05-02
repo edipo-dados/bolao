@@ -62,6 +62,19 @@ class ApiClient {
     });
   }
 
+  async changePassword(newPassword: string) {
+    return this.request('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    });
+  }
+
+  async adminResetPassword(userId: string) {
+    return this.request<{ tempPassword: string }>(`/admin/users/${userId}/reset-password`, {
+      method: 'POST',
+    });
+  }
+
   // User
   async getProfile() {
     return this.request<any>('/users/me');

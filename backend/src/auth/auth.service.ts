@@ -50,7 +50,13 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.email, user.role);
     return {
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        mustChangePassword: user.mustChangePassword,
+      },
       accessToken: token,
     };
   }
@@ -91,5 +97,19 @@ export class AuthService {
 
   private generateToken(userId: string, email: string, role: string): string {
     return this.jwtService.sign({ sub: userId, email, role });
+  }
+
+  async changePassword(userId: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('A senha deve ter pelo menos 6 caracteres');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.usersService.update(userId, {
+      password: hashedPassword,
+      mustChangePassword: false,
+    });
+
+    return { message: 'Senha alterada com sucesso' };
   }
 }

@@ -518,12 +518,26 @@ function UsersTab() {
               </td>
               <td className="py-3">
                 {u.role !== 'SUPER_ADMIN' && (
-                  <button
-                    onClick={() => handleDelete(u.id)}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Resetar senha de ${u.name}?`)) return;
+                        try {
+                          const result = await api.adminResetPassword(u.id);
+                          alert(`Senha temporária: ${result.tempPassword}\n\nO usuário deverá trocar a senha no próximo login.`);
+                        } catch (err: any) { alert(err.message); }
+                      }}
+                      className="text-gold-400 hover:text-gold-300 text-sm"
+                    >
+                      🔑 Reset
+                    </button>
+                    <button
+                      onClick={() => handleDelete(u.id)}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 )}
               </td>
             </tr>
