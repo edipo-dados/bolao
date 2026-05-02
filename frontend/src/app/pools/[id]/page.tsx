@@ -210,10 +210,21 @@ export default function PoolDetailPage() {
       setPool(data);
 
       if (user) {
-        const participant = data.participants?.find((p: any) => p.user.id === user.id);
-        const adminStatus = participant?.role === 'ADMIN' && participant?.status === 'APPROVED';
-        setIsAdmin(adminStatus);
-        setIsMember(participant?.status === 'APPROVED');
+        const participant = data.participants?.find((p: any) => p.user?.id === user.id);
+        const isPoolAdmin = participant?.role === 'ADMIN' && participant?.status === 'APPROVED';
+        const isSuperAdmin = user.role === 'SUPER_ADMIN';
+        setIsAdmin(isPoolAdmin || isSuperAdmin);
+        setIsMember(participant?.status === 'APPROVED' || isSuperAdmin);
+
+        // Carregar pendentes imediatamente se for admin
+        if (isPoolAdmin || isSuperAdmin) {
+          try {
+            const pend = await api.getPendingParticipants(data.id);
+            setPending(pend);
+          } catch {
+            setPending([]);
+          }
+        }
       }
     } catch (err) {
       console.error(err);
