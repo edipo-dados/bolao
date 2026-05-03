@@ -35,9 +35,20 @@ class ApiClient {
 
   // Auth
   async register(data: { name: string; email: string; password: string }) {
-    return this.request<{ user: any; accessToken: string }>('/auth/register', {
+    return this.request<any>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async verifyEmail(token: string) {
+    return this.request<any>(`/auth/verify-email?token=${token}`);
+  }
+
+  async resendVerification(email: string) {
+    return this.request<any>('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   }
 

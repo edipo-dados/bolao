@@ -50,8 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (name: string, email: string, password: string) => {
     const result = await api.register({ name, email, password });
-    localStorage.setItem('token', result.accessToken);
-    setUser(result.user);
+    // Não faz login — precisa confirmar email primeiro
+    return result;
   };
 
   const logout = () => {

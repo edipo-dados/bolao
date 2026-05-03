@@ -11,6 +11,7 @@ import { RankingModule } from './ranking/ranking.module';
 import { FootballModule } from './football/football.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     FootballModule,
     AdminModule,
     NotificationsModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

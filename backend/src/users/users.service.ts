@@ -9,6 +9,7 @@ export class UsersService {
     name: string;
     email: string;
     password: string;
+    verifyToken?: string;
   }) {
     return this.prisma.user.create({ data });
   }
@@ -23,6 +24,10 @@ export class UsersService {
 
   async findByResetToken(resetToken: string) {
     return this.prisma.user.findFirst({ where: { resetToken } });
+  }
+
+  async findByVerifyToken(verifyToken: string) {
+    return this.prisma.user.findFirst({ where: { verifyToken } });
   }
 
   async update(id: string, data: any) {

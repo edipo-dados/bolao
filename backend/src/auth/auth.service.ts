@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -16,6 +17,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -25,16 +27,56 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const verifyToken = uuidv4();
+
     const user = await this.usersService.create({
       ...dto,
       password: hashedPassword,
+      verifyToken,
     });
 
-    const token = this.generateToken(user.id, user.email, user.role);
+    // Enviar email de confirmação
+    await this.emailService.sendVerificationEmail(user.email, user.name, verifyToken);
+
     return {
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      accessToken: token,
+      message: 'Conta criada! Verifique seu email para ativar.',
+      needsVerification: true,
     };
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.usersService.findByVerifyToken(token);
+    if (!user) {
+      throw new BadRequestException('Token inválido ou já utilizado');
+    }
+
+    await this.usersService.update(user.id, {
+      emailVerified: true,
+      verifyToken: null,
+    });
+
+    const jwtToken = this.generateToken(user.id, user.email, user.role);
+    return {
+      message: 'Email confirmado com sucesso!',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      accessToken: jwtToken,
+    };
+  }
+
+  async resendVerification(email: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      return { message: 'Se o email existir, um novo link será enviado' };
+    }
+    if (user.emailVerified) {
+      return { message: 'Email já confirmado' };
+    }
+
+    const verifyToken = uuidv4();
+    await this.usersService.update(user.id, { verifyToken });
+    await this.emailService.sendVerificationEmail(user.email, user.name, verifyToken);
+
+    return { message: 'Novo email de confirmação enviado' };
   }
 
   async login(dto: LoginDto) {
@@ -46,6 +88,10 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('Confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
     }
 
     const token = this.generateToken(user.id, user.email, user.role);
@@ -75,8 +121,10 @@ export class AuthService {
       resetTokenExp,
     });
 
-    // Em produção, enviar email com o token
-    return { message: 'Se o email existir, um link de recuperação será enviado', resetToken };
+    // Enviar email de reset
+    await this.emailService.sendPasswordResetEmail(user.email, user.name, resetToken);
+
+    return { message: 'Se o email existir, um link de recuperação será enviado' };
   }
 
   async resetPassword(token: string, newPassword: string) {
