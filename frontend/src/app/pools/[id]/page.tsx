@@ -209,22 +209,16 @@ export default function PoolDetailPage() {
       const data = await api.getPool(id);
       setPool(data);
 
+      // Extrair pendentes direto dos participantes do pool
+      const pendingList = data.participants?.filter((p: any) => p.status === 'PENDING') || [];
+      setPending(pendingList);
+
       if (user) {
         const participant = data.participants?.find((p: any) => p.user?.id === user.id);
         const isPoolAdmin = participant?.role === 'ADMIN' && participant?.status === 'APPROVED';
         const isSuperAdmin = user.role === 'SUPER_ADMIN';
         setIsAdmin(isPoolAdmin || isSuperAdmin);
         setIsMember(participant?.status === 'APPROVED' || isSuperAdmin);
-
-        // Carregar pendentes imediatamente se for admin
-        if (isPoolAdmin || isSuperAdmin) {
-          try {
-            const pend = await api.getPendingParticipants(data.id);
-            setPending(pend);
-          } catch {
-            setPending([]);
-          }
-        }
       }
     } catch (err) {
       console.error(err);
@@ -250,13 +244,8 @@ export default function PoolDetailPage() {
           }
           break;
         case 'participants':
-          // Sempre tenta carregar pendentes se for admin
-          try {
-            const pend = await api.getPendingParticipants(pool.id);
-            setPending(pend);
-          } catch {
-            setPending([]);
-          }
+          // Recarregar pool para pegar pendentes atualizados
+          loadPool();
           break;
       }
     } catch (err) {
@@ -287,8 +276,7 @@ export default function PoolDetailPage() {
   const handleApprove = async (participantId: string) => {
     try {
       await api.approveParticipant(id, participantId);
-      loadPool();
-      loadTabData();
+      await loadPool();
     } catch (err: any) {
       alert(err.message);
     }
@@ -297,7 +285,7 @@ export default function PoolDetailPage() {
   const handleReject = async (participantId: string) => {
     try {
       await api.rejectParticipant(id, participantId);
-      loadTabData();
+      await loadPool();
     } catch (err: any) {
       alert(err.message);
     }
