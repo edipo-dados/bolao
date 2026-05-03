@@ -651,30 +651,78 @@ function PoolsTab() {
 // ==================== LOGS ====================
 function LogsTab() {
   const [data, setData] = useState<any>({ logs: [], total: 0 });
+  const [page, setPage] = useState(1);
+
+  const loadLogs = async (p: number) => {
+    try {
+      const result = await api.getAdminLogs(p);
+      setData(result);
+      setPage(p);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    api.getAdminLogs().then(setData).catch(console.error);
+    loadLogs(1);
   }, []);
 
+  const logs = data.logs || [];
+
   return (
-    <div className="card">
-      {data.logs.length === 0 ? (
-        <p className="text-gray-500 text-center py-4">Nenhum log registrado</p>
+    <div className="space-y-4">
+      <div className="text-xs text-fifa-muted">{data.total} atividades registradas</div>
+
+      {logs.length === 0 ? (
+        <div className="card text-center py-8 text-fifa-muted">Nenhum log registrado</div>
       ) : (
-        <div className="space-y-2">
-          {data.logs.map((log: any) => (
-            <div key={log.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-              <span className="text-xs text-gray-400 w-36 shrink-0">
-                {new Date(log.createdAt).toLocaleString('pt-BR')}
-              </span>
-              <span className="text-sm font-medium">{log.action}</span>
-              {log.details && <span className="text-sm text-gray-500">{log.details}</span>}
-              {log.user && <span className="text-xs text-gray-400">por {log.user.name}</span>}
+        <div className="space-y-1">
+          {logs.map((log: any) => (
+            <div key={log.id} className="card py-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-fifa-dark border border-fifa-border flex items-center justify-center text-xs shrink-0">
+                  {log.user ? log.user.name.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-fifa-white">
+                      {log.user?.name || 'Sistema'}
+                    </span>
+                    <span className="text-xs text-fifa-muted">
+                      {new Date(log.createdAt).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gold-400 mt-0.5">{log.action}</div>
+                  {log.details && (
+                    <div className="text-xs text-fifa-muted mt-0.5 break-all">{log.details}</div>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
-      <div className="text-sm text-gray-500 mt-4">Total: {data.total} logs</div>
+
+      {/* Paginação */}
+      {data.total > 50 && (
+        <div className="flex justify-center gap-2">
+          <button
+            onClick={() => loadLogs(page - 1)}
+            disabled={page <= 1}
+            className="btn-secondary text-xs py-1 px-3"
+          >
+            ← Anterior
+          </button>
+          <span className="text-xs text-fifa-muted py-1">Página {page}</span>
+          <button
+            onClick={() => loadLogs(page + 1)}
+            disabled={logs.length < 50}
+            className="btn-secondary text-xs py-1 px-3"
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
