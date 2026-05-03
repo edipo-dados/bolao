@@ -27,20 +27,19 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const verifyToken = uuidv4();
 
     const user = await this.usersService.create({
       ...dto,
       password: hashedPassword,
-      verifyToken,
     });
 
-    // Enviar email de confirmação
-    await this.emailService.sendVerificationEmail(user.email, user.name, verifyToken);
+    // Marcar como verificado (sem confirmação de email por enquanto)
+    await this.usersService.update(user.id, { emailVerified: true });
 
+    const token = this.generateToken(user.id, user.email, user.role);
     return {
-      message: 'Conta criada! Verifique seu email para ativar.',
-      needsVerification: true,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      accessToken: token,
     };
   }
 
@@ -88,10 +87,6 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciais inválidas');
-    }
-
-    if (!user.emailVerified) {
-      throw new UnauthorizedException('Confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
     }
 
     const token = this.generateToken(user.id, user.email, user.role);

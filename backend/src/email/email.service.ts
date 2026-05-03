@@ -8,13 +8,24 @@ export class EmailService {
   private readonly fromEmail: string;
 
   constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY || '');
+    const apiKey = process.env.RESEND_API_KEY;
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
+    } else {
+      this.resend = null as any;
+      this.logger.warn('RESEND_API_KEY não configurada — emails serão apenas logados no console');
+    }
     this.fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
   }
 
   async sendVerificationEmail(to: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const verifyUrl = `${frontendUrl}/verify-email?token=${token}`;
+
+    if (!this.resend) {
+      this.logger.log(`[DEV] Email de verificação para ${to}: ${verifyUrl}`);
+      return;
+    }
 
     try {
       await this.resend.emails.send({
@@ -52,6 +63,11 @@ export class EmailService {
   async sendPasswordResetEmail(to: string, name: string, token: string) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+    if (!this.resend) {
+      this.logger.log(`[DEV] Email de reset para ${to}: ${resetUrl}`);
+      return;
+    }
 
     try {
       await this.resend.emails.send({
