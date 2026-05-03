@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { FootballSyncService } from './football-sync.service';
 import { ApiFootballProvider } from './providers/api-football.provider';
 import { EspnScraperProvider } from './providers/espn-scraper.provider';
@@ -6,11 +6,6 @@ import { LeaguesModule } from '../leagues/leagues.module';
 import { MatchesModule } from '../matches/matches.module';
 import { RankingModule } from '../ranking/ranking.module';
 
-/**
- * Escolhe o provider automaticamente:
- * - Se FOOTBALL_API_KEY ou RAPIDAPI_KEY estiver configurada → usa ApiFootballProvider
- * - Senão → usa EspnScraperProvider (grátis, sem chave)
- */
 const footballProviderFactory = {
   provide: 'FOOTBALL_PROVIDER',
   useFactory: () => {
@@ -22,7 +17,7 @@ const footballProviderFactory = {
 };
 
 @Module({
-  imports: [LeaguesModule, MatchesModule, RankingModule],
+  imports: [LeaguesModule, forwardRef(() => MatchesModule), RankingModule],
   providers: [
     ApiFootballProvider,
     EspnScraperProvider,

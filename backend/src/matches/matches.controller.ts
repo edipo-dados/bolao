@@ -1,16 +1,36 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { MatchesService } from './matches.service';
+import { FootballSyncService } from '../football/football-sync.service';
 
 @ApiTags('Matches')
 @Controller('matches')
 export class MatchesController {
-  constructor(private matchesService: MatchesService) {}
+  constructor(
+    private matchesService: MatchesService,
+    private syncService: FootballSyncService,
+  ) {}
 
   @Get('highlights')
   @ApiOperation({ summary: 'Jogos em destaque (ao vivo, hoje e recentes) — público' })
-  getHighlights() {
-    return this.matchesService.getHighlights();
+  async getHighlights() {
+    const data = await this.matchesService.getHighlights();
+    return {
+      ...data,
+      lastSync: this.syncService.getLastSyncTime(),
+    };
+  }
+
+  @Get('live/:leagueId')
+  @ApiOperation({ summary: 'Jogos ao vivo ou do dia de um campeonato' })
+  getLiveMatches(@Param('leagueId') leagueId: string) {
+    return this.matchesService.getLiveAndToday(leagueId);
+  }
+
+  @Get('sync-status')
+  @ApiOperation({ summary: 'Status da última sincronização' })
+  getSyncStatus() {
+    return { lastSync: this.syncService.getLastSyncTime() };
   }
 
   @Get('league/:leagueId')

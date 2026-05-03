@@ -447,6 +447,7 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
   const [awayScore, setAwayScore] = useState(0);
   const [saving, setSaving] = useState(false);
   const [myPredictions, setMyPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
   // Filtros
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -470,8 +471,26 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
     }
   };
 
+  // Carregar status do sync
+  const loadSyncStatus = async () => {
+    try {
+      const status = await api.getSyncStatus();
+      setLastSync(status.lastSync);
+    } catch {}
+  };
+
   useEffect(() => {
     loadMatches();
+    loadSyncStatus();
+  }, [leagueId, statusFilter, dateFrom, dateTo]);
+
+  // Polling: atualizar jogos ao vivo a cada 60 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadMatches();
+      loadSyncStatus();
+    }, 60000);
+    return () => clearInterval(interval);
   }, [leagueId, statusFilter, dateFrom, dateTo]);
 
   // Carregar palpites existentes
@@ -557,9 +576,16 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
         </div>
       </div>
 
-      {/* Contagem */}
-      <div className="text-sm text-dark-500">
-        {loading ? 'Carregando...' : `${matches.length} jogo${matches.length !== 1 ? 's' : ''} encontrado${matches.length !== 1 ? 's' : ''}`}
+      {/* Contagem + última atualização */}
+      <div className="flex items-center justify-between text-xs text-fifa-muted">
+        <span>
+          {loading ? 'Carregando...' : `${matches.length} jogo${matches.length !== 1 ? 's' : ''}`}
+        </span>
+        {lastSync && (
+          <span>
+            🔄 Atualizado {new Date(lastSync).toLocaleString('pt-BR')}
+          </span>
+        )}
       </div>
 
       {/* Lista de jogos */}
@@ -584,22 +610,28 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                         {match.homeTeam}
                       </span>
                       {match.status === 'FINISHED' ? (
-                        <span className="font-extrabold text-lg text-primary-700 shrink-0">
+                        <span className="font-extrabold text-lg text-gold-400 shrink-0">
                           {match.homeScore} x {match.awayScore}
                         </span>
                       ) : match.status === 'LIVE' ? (
-                        <span className="badge-red animate-pulse shrink-0">AO VIVO</span>
+                        <span className="shrink-0 flex items-center gap-1.5">
+                          <span className="font-extrabold text-lg text-accent-red">
+                            {match.homeScore ?? 0} x {match.awayScore ?? 0}
+                          </span>
+                          <span className="w-2 h-2 bg-accent-red rounded-full animate-pulse" />
+                        </span>
                       ) : (
-                        <span className="text-dark-300 text-sm shrink-0">vs</span>
+                        <span className="text-fifa-muted text-sm shrink-0">vs</span>
                       )}
                       <span className="font-semibold w-28 sm:w-36 truncate text-sm">
                         {match.awayTeam}
                       </span>
                     </div>
-                    <div className="text-xs text-dark-400 mt-1 flex items-center gap-2 flex-wrap">
+                    <div className="text-xs text-fifa-muted mt-1 flex items-center gap-2 flex-wrap">
                       {match.round && <span>{match.round}</span>}
                       <span>{new Date(match.matchDate).toLocaleString('pt-BR')}</span>
                       {match.status === 'FINISHED' && <span className="badge-green">Finalizado</span>}
+                      {match.status === 'LIVE' && <span className="badge-red">🔴 Ao Vivo</span>}
                       {match.status === 'SCHEDULED' && !editable && (
                         <span className="badge-red">🔒 Fechado</span>
                       )}

@@ -192,7 +192,15 @@ class ApiClient {
 
   // Matches
   async getHighlights() {
-    return this.request<{ live: any[]; today: any[]; upcoming: any[]; recent: any[] }>('/matches/highlights');
+    return this.request<{ live: any[]; today: any[]; upcoming: any[]; recent: any[]; lastSync: string | null }>('/matches/highlights');
+  }
+
+  async getLiveMatches(leagueId: string) {
+    return this.request<any[]>(`/matches/live/${leagueId}`);
+  }
+
+  async getSyncStatus() {
+    return this.request<{ lastSync: string | null }>('/matches/sync-status');
   }
 
   async getMatchesByLeague(leagueId: string, round?: string) {

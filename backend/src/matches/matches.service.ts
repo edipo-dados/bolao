@@ -74,6 +74,24 @@ export class MatchesService {
     return { live, today, upcoming, recent };
   }
 
+  /** Jogos ao vivo + jogos de hoje de um campeonato */
+  async getLiveAndToday(leagueId: string) {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+    return this.prisma.match.findMany({
+      where: {
+        leagueId,
+        OR: [
+          { status: 'LIVE' },
+          { matchDate: { gte: startOfDay, lt: endOfDay } },
+        ],
+      },
+      orderBy: { matchDate: 'asc' },
+    });
+  }
+
   async findFiltered(leagueId: string, filters?: { from?: string; to?: string; status?: string }) {
     const where: any = { leagueId };
 

@@ -9,6 +9,7 @@ import { MatchStatus } from '@prisma/client';
 @Injectable()
 export class FootballSyncService {
   private readonly logger = new Logger(FootballSyncService.name);
+  private lastSyncTime: Date | null = null;
 
   constructor(
     @Inject('FOOTBALL_PROVIDER') private footballProvider: FootballProvider,
@@ -17,12 +18,15 @@ export class FootballSyncService {
     private rankingService: RankingService,
   ) {}
 
+  getLastSyncTime(): Date | null {
+    return this.lastSyncTime;
+  }
+
   /**
-   * Sync automático a cada 30 minutos.
-   * Sincroniza APENAS ligas que têm bolões ativos — economiza requests.
-   * Funciona com ESPN (grátis) ou API-Football.
+   * Sync automático a cada 10 minutos.
+   * Sincroniza APENAS ligas que têm bolões ativos.
    */
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async syncFixtures() {
     this.logger.log('⏰ Sync automático iniciado...');
 
@@ -81,6 +85,7 @@ export class FootballSyncService {
         this.logger.log(`🏆 Pontuações calculadas para ${recentlyFinished.length} jogo(s)`);
       }
 
+      this.lastSyncTime = new Date();
       this.logger.log('✅ Sync automático concluído');
     } catch (error) {
       this.logger.error('❌ Erro no sync automático:', error);
