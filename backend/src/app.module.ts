@@ -13,6 +13,7 @@ import { FootballModule } from './football/football.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { EmailModule } from './email/email.module';
+import { HealthModule } from './health/health.module';
 import { ActivityLogInterceptor } from './common/activity-log.interceptor';
 
 @Module({
@@ -30,6 +31,7 @@ import { ActivityLogInterceptor } from './common/activity-log.interceptor';
     AdminModule,
     NotificationsModule,
     EmailModule,
+    HealthModule,
   ],
   providers: [
     {
