@@ -4,6 +4,7 @@ import {
   LeagueData,
   MatchData,
 } from '../interfaces/football-provider.interface';
+import { translateTeamName } from '../team-translations';
 
 /**
  * Provider que usa a API pública da ESPN para buscar resultados de futebol.
@@ -214,8 +215,8 @@ export class EspnScraperProvider implements FootballProvider {
       return {
         externalId: parseInt(event.id),
         leagueExternalId: leagueId,
-        homeTeam: homeTeamData.team?.displayName || homeTeamData.team?.name || 'TBD',
-        awayTeam: awayTeamData.team?.displayName || awayTeamData.team?.name || 'TBD',
+        homeTeam: translateTeamName(homeTeamData.team?.displayName || homeTeamData.team?.name || 'TBD'),
+        awayTeam: translateTeamName(awayTeamData.team?.displayName || awayTeamData.team?.name || 'TBD'),
         homeTeamLogo: homeTeamData.team?.logo || null,
         awayTeamLogo: awayTeamData.team?.logo || null,
         homeScore: isFinished || isLive ? homeScore : undefined,
