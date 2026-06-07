@@ -23,10 +23,10 @@ export class FootballSyncService {
   }
 
   /**
-   * Sync automático a cada 10 minutos.
+   * Sync automático a cada 5 minutos.
    * Sincroniza APENAS ligas que têm bolões ativos.
    */
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  @Cron('0 */5 * * * *')
   async syncFixtures() {
     this.logger.log('⏰ Sync automático iniciado...');
 
