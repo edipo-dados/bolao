@@ -1036,6 +1036,37 @@ function ParticipantsTab({
 function SettingsTab({ pool, onUpdate }: { pool: any; onUpdate: () => void }) {
   const [rules, setRules] = useState(pool.rules || []);
   const [saving, setSaving] = useState(false);
+  const [savingInfo, setSavingInfo] = useState(false);
+
+  // Info editável
+  const [name, setName] = useState(pool.name || '');
+  const [description, setDescription] = useState(pool.description || '');
+  const [type, setType] = useState(pool.type || 'PUBLIC');
+  const [pixKey, setPixKey] = useState(pool.pixKey || '');
+  const [pixName, setPixName] = useState(pool.pixName || '');
+  const [entryFee, setEntryFee] = useState(pool.entryFee || '');
+  const [contactPhone, setContactPhone] = useState(pool.contactPhone || '');
+  const [contactEmail, setContactEmail] = useState(pool.contactEmail || '');
+
+  const handleSaveInfo = async () => {
+    setSavingInfo(true);
+    try {
+      await api.updatePool(pool.id, {
+        name, description, type,
+        pixKey: pixKey || null,
+        pixName: pixName || null,
+        entryFee: entryFee || null,
+        contactPhone: contactPhone || null,
+        contactEmail: contactEmail || null,
+      });
+      alert('Informações atualizadas!');
+      onUpdate();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSavingInfo(false);
+    }
+  };
 
   const handleSaveRules = async () => {
     setSaving(true);
@@ -1069,107 +1100,100 @@ function SettingsTab({ pool, onUpdate }: { pool: any; onUpdate: () => void }) {
 
   return (
     <div className="space-y-6">
+      {/* Informações do bolão */}
+      <div className="card space-y-4">
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Informações do Bolão</h3>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Nome</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Descrição</label>
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input-field" rows={2} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-2 uppercase tracking-wide">Tipo</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="poolType" value="PUBLIC" checked={type === 'PUBLIC'} onChange={() => setType('PUBLIC')} className="accent-gold-400" />
+              <span className="text-fifa-light">🌐 Público</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="poolType" value="PRIVATE" checked={type === 'PRIVATE'} onChange={() => setType('PRIVATE')} className="accent-gold-400" />
+              <span className="text-fifa-light">🔒 Privado</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* PIX */}
+      <div className="card space-y-4">
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Pagamento PIX</h3>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Valor da entrada</label>
+          <input type="text" value={entryFee} onChange={(e) => setEntryFee(e.target.value)} className="input-field" placeholder="Ex: R$ 20,00" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Chave PIX</label>
+          <input type="text" value={pixKey} onChange={(e) => setPixKey(e.target.value)} className="input-field" placeholder="CPF, email, telefone ou chave aleatória" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Nome do titular</label>
+          <input type="text" value={pixName} onChange={(e) => setPixName(e.target.value)} className="input-field" placeholder="Nome que aparece no PIX" />
+        </div>
+      </div>
+
+      {/* Contato */}
+      <div className="card space-y-4">
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Contato do organizador</h3>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">WhatsApp / Telefone</label>
+          <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="input-field" placeholder="(11) 99999-9999" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-fifa-text mb-1 uppercase tracking-wide">Email de contato</label>
+          <input type="text" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="input-field" placeholder="contato@email.com" />
+        </div>
+      </div>
+
+      {/* Botão salvar info */}
+      <button onClick={handleSaveInfo} disabled={savingInfo} className="btn-primary w-full py-3">
+        {savingInfo ? 'Salvando...' : 'Salvar Informações'}
+      </button>
+
       {/* Regras */}
-      <div className="card">
-        <h3 className="font-semibold mb-4">📏 Regras de Pontuação</h3>
+      <div className="card space-y-4">
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest">Regras de Pontuação</h3>
         <div className="space-y-3">
           {rules.map((rule: any, index: number) => (
-            <div key={index} className="flex items-center gap-3">
-              <input
-                type="text"
-                value={rule.name}
-                onChange={(e) => {
-                  const updated = [...rules];
-                  updated[index] = { ...updated[index], name: e.target.value };
-                  setRules(updated);
-                }}
-                className="input-field flex-1"
-                placeholder="Nome da regra"
-              />
-              <input
-                type="text"
-                value={rule.description || ''}
-                onChange={(e) => {
-                  const updated = [...rules];
-                  updated[index] = { ...updated[index], description: e.target.value };
-                  setRules(updated);
-                }}
-                className="input-field flex-1"
-                placeholder="Descrição"
-              />
-              <input
-                type="number"
-                value={rule.points}
-                onChange={(e) => {
-                  const updated = [...rules];
-                  updated[index] = { ...updated[index], points: parseInt(e.target.value) || 0 };
-                  setRules(updated);
-                }}
-                className="input-field w-20 text-center"
-                aria-label="Pontos"
-              />
-              <button
-                onClick={() => setRules(rules.filter((_: any, i: number) => i !== index))}
-                className="text-red-500 hover:text-red-700"
-                aria-label="Remover regra"
-              >
-                ✕
-              </button>
+            <div key={index} className="flex items-center gap-2">
+              <input type="text" value={rule.name} onChange={(e) => { const u = [...rules]; u[index] = { ...u[index], name: e.target.value }; setRules(u); }} className="input-field flex-1" placeholder="Nome" />
+              <input type="text" value={rule.description || ''} onChange={(e) => { const u = [...rules]; u[index] = { ...u[index], description: e.target.value }; setRules(u); }} className="input-field flex-1" placeholder="Descrição" />
+              <input type="number" value={rule.points} onChange={(e) => { const u = [...rules]; u[index] = { ...u[index], points: parseInt(e.target.value) || 0 }; setRules(u); }} className="input-field w-16 text-center" />
+              <button onClick={() => setRules(rules.filter((_: any, i: number) => i !== index))} className="text-accent-red hover:text-red-400 text-lg">✕</button>
             </div>
           ))}
         </div>
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={() =>
-              setRules([...rules, { name: '', description: '', points: 0 }])
-            }
-            className="btn-secondary text-sm"
-          >
-            + Adicionar Regra
-          </button>
-          <button
-            onClick={handleSaveRules}
-            disabled={saving}
-            className="btn-primary text-sm"
-          >
-            {saving ? 'Salvando...' : 'Salvar Regras'}
-          </button>
+        <div className="flex gap-2">
+          <button onClick={() => setRules([...rules, { name: '', description: '', points: 0 }])} className="btn-secondary text-xs">+ Regra</button>
+          <button onClick={handleSaveRules} disabled={saving} className="btn-primary text-xs">{saving ? 'Salvando...' : 'Salvar Regras'}</button>
         </div>
       </div>
 
       {/* Link de convite */}
       <div className="card">
-        <h3 className="font-semibold mb-2">🔗 Link de Convite</h3>
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-3">Link de Convite</h3>
         <div className="flex items-center gap-2">
-          <input
-            type="text"
-            readOnly
-            value={`${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${pool.inviteCode}`}
-            className="input-field flex-1 bg-gray-50"
-          />
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(
-                `${window.location.origin}/invite/${pool.inviteCode}`,
-              );
-              alert('Link copiado!');
-            }}
-            className="btn-secondary"
-          >
-            Copiar
-          </button>
+          <input type="text" readOnly value={`${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${pool.inviteCode}`} className="input-field flex-1 text-xs" />
+          <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/invite/${pool.inviteCode}`); alert('Link copiado!'); }} className="btn-gold text-xs">Copiar</button>
         </div>
       </div>
 
       {/* Zona de perigo */}
-      <div className="card border-red-200">
-        <h3 className="font-semibold text-red-600 mb-2">⚠️ Zona de Perigo</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Excluir o bolão é uma ação irreversível. Todos os dados serão perdidos.
-        </p>
-        <button onClick={handleDeletePool} className="btn-danger text-sm">
-          Excluir Bolão
-        </button>
+      <div className="card border border-accent-red/20">
+        <h3 className="text-xs font-semibold text-accent-red uppercase tracking-widest mb-2">Zona de Perigo</h3>
+        <p className="text-xs text-fifa-muted mb-3">Excluir o bolão é irreversível. Todos os dados serão perdidos.</p>
+        <button onClick={handleDeletePool} className="btn-danger text-xs">Excluir Bolão</button>
       </div>
     </div>
   );
