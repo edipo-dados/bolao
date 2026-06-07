@@ -100,4 +100,98 @@ export class PredictionsService {
       take: 50,
     });
   }
+
+  /**
+   * Copia palpites de um bolão para outros bolões do mesmo campeonato.
+   * Só copia para jogos que ainda não começaram e onde o usuário não tem palpite.
+   */
+  async copyToOtherPools(userId: string, sourcePoolId: string) {
+    // Buscar o campeonato do bolão de origem
+    const sourcePool = await this.prisma.pool.findUnique({
+      where: { id: sourcePoolId },
+      select: { leagueId: true },
+    });
+    if (!sourcePool) return { copied: 0, pools: [] };
+
+    // Buscar outros bolões do mesmo campeonato que o usuário participa
+    const otherPools = await this.prisma.poolParticipant.findMany({
+      where: {
+        userId,
+        status: 'APPROVED',
+        poolId: { not: sourcePoolId },
+        pool: { leagueId: sourcePool.leagueId },
+      },
+      select: { poolId: true, pool: { select: { name: true } } },
+    });
+
+    if (otherPools.length === 0) return { copied: 0, pools: [] };
+
+    // Buscar palpites do usuário no bolão de origem (só jogos futuros)
+    const now = new Date();
+    const sourcePredictions = await this.prisma.prediction.findMany({
+      where: {
+        userId,
+        poolId: sourcePoolId,
+        match: { status: 'SCHEDULED', matchDate: { gt: now } },
+      },
+    });
+
+    let totalCopied = 0;
+    const poolNames: string[] = [];
+
+    for (const otherPool of otherPools) {
+      let copiedToThis = 0;
+      for (const pred of sourcePredictions) {
+        // Verificar se já tem palpite nesse bolão para esse jogo
+        const existing = await this.prisma.prediction.findUnique({
+          where: {
+            userId_matchId_poolId: {
+              userId,
+              matchId: pred.matchId,
+              poolId: otherPool.poolId,
+            },
+          },
+        });
+
+        if (!existing) {
+          await this.prisma.prediction.create({
+            data: {
+              userId,
+              matchId: pred.matchId,
+              poolId: otherPool.poolId,
+              homeScore: pred.homeScore,
+              awayScore: pred.awayScore,
+            },
+          });
+          copiedToThis++;
+        }
+      }
+
+      if (copiedToThis > 0) {
+        totalCopied += copiedToThis;
+        poolNames.push(otherPool.pool.name);
+      }
+    }
+
+    return { copied: totalCopied, pools: poolNames };
+  }
+
+  /** Retorna outros bolões do mesmo campeonato que o usuário participa */
+  async getRelatedPools(userId: string, poolId: string) {
+    const pool = await this.prisma.pool.findUnique({
+      where: { id: poolId },
+      select: { leagueId: true },
+    });
+    if (!pool) return [];
+
+    return this.prisma.poolParticipant.findMany({
+      where: {
+        userId,
+        status: 'APPROVED',
+        poolId: { not: poolId },
+        pool: { leagueId: pool.leagueId },
+      },
+      select: { pool: { select: { id: true, name: true } } },
+    });
+  }
 }

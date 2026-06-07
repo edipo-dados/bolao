@@ -250,6 +250,16 @@ class ApiClient {
     return this.request<any[]>('/predictions/history');
   }
 
+  async copyPredictionsToOtherPools(poolId: string) {
+    return this.request<{ copied: number; pools: string[] }>(`/predictions/copy-to-pools/${poolId}`, {
+      method: 'POST',
+    });
+  }
+
+  async getRelatedPools(poolId: string) {
+    return this.request<any[]>(`/predictions/related-pools/${poolId}`);
+  }
+
   // Ranking
   async getRanking(poolId: string) {
     return this.request<any[]>(`/ranking/pool/${poolId}`);

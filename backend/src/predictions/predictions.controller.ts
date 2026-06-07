@@ -49,4 +49,22 @@ export class PredictionsController {
   getHistory(@CurrentUser() user: any) {
     return this.predictionsService.getUserPredictionHistory(user.id);
   }
+
+  @Post('copy-to-pools/:poolId')
+  @ApiOperation({ summary: 'Copiar palpites para outros bolões do mesmo campeonato' })
+  copyToOtherPools(
+    @CurrentUser() user: any,
+    @Param('poolId') poolId: string,
+  ) {
+    return this.predictionsService.copyToOtherPools(user.id, poolId);
+  }
+
+  @Get('related-pools/:poolId')
+  @ApiOperation({ summary: 'Outros bolões do mesmo campeonato' })
+  getRelatedPools(
+    @CurrentUser() user: any,
+    @Param('poolId') poolId: string,
+  ) {
+    return this.predictionsService.getRelatedPools(user.id, poolId);
+  }
 }

@@ -509,6 +509,19 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
     }
   };
 
+  const handleCopyToOtherPools = async () => {
+    try {
+      const result = await api.copyPredictionsToOtherPools(poolId);
+      if (result.copied === 0) {
+        alert('Nenhum palpite novo para copiar. Todos os bolões já estão atualizados.');
+      } else {
+        alert(`✅ ${result.copied} palpite(s) copiado(s) para:\n${result.pools.join('\n')}`);
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const canPredict = (match: any) => {
     return match.status === 'SCHEDULED' && new Date(match.matchDate) > new Date();
   };
@@ -566,16 +579,23 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
         </div>
       </div>
 
-      {/* Contagem + última atualização */}
-      <div className="flex items-center justify-between text-xs text-fifa-muted">
+      {/* Contagem + última atualização + copiar */}
+      <div className="flex items-center justify-between text-xs text-fifa-muted flex-wrap gap-2">
         <span>
           {loading ? 'Carregando...' : `${matches.length} jogo${matches.length !== 1 ? 's' : ''}`}
         </span>
-        {lastSync && (
-          <span>
-            🔄 Atualizado {new Date(lastSync).toLocaleString('pt-BR')}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {isMember && Object.keys(myPredictions).length > 0 && (
+            <button onClick={handleCopyToOtherPools} className="text-gold-400 hover:text-gold-300 text-[11px] font-medium">
+              📋 Copiar palpites para outros bolões
+            </button>
+          )}
+          {lastSync && (
+            <span>
+              🔄 {new Date(lastSync).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Lista de jogos */}
