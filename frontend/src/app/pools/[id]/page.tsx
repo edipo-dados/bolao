@@ -431,8 +431,8 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [predicting, setPredicting] = useState<string | null>(null);
-  const [homeScore, setHomeScore] = useState(0);
-  const [awayScore, setAwayScore] = useState(0);
+  const [homeScoreInput, setHomeScoreInput] = useState('');
+  const [awayScoreInput, setAwayScoreInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [myPredictions, setMyPredictions] = useState<Record<string, { homeScore: number; awayScore: number }>>({});
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -495,6 +495,8 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
   }, [isMember, poolId]);
 
   const handlePredict = async (matchId: string) => {
+    const homeScore = parseInt(homeScoreInput) || 0;
+    const awayScore = parseInt(awayScoreInput) || 0;
     setSaving(true);
     try {
       await api.createPrediction({ matchId, poolId, homeScore, awayScore });
@@ -640,8 +642,8 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                             <button
                               onClick={() => {
                                 setPredicting(match.id);
-                                setHomeScore(existing.homeScore);
-                                setAwayScore(existing.awayScore);
+                                setHomeScoreInput(String(existing.homeScore));
+                                setAwayScoreInput(String(existing.awayScore));
                               }}
                               className="text-primary-600 hover:underline text-xs mt-0.5"
                             >
@@ -653,8 +655,8 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                         <button
                           onClick={() => {
                             setPredicting(match.id);
-                            setHomeScore(0);
-                            setAwayScore(0);
+                            setHomeScoreInput('');
+                            setAwayScoreInput('');
                           }}
                           className="btn-primary text-xs py-1.5 px-3"
                         >
@@ -670,31 +672,37 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                   <div className="mt-4 pt-4 border-t border-dark-100">
                     <div className="flex items-center justify-center gap-3">
                       <div className="text-center">
-                        <div className="text-xs text-dark-500 mb-1 font-semibold">{match.homeTeam}</div>
+                        <div className="text-xs text-fifa-muted mb-1 font-semibold">{match.homeTeam}</div>
                         <input
-                          type="number"
-                          min="0"
-                          max="99"
-                          value={homeScore}
-                          onChange={(e) => setHomeScore(parseInt(e.target.value) || 0)}
-                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-dark-200 rounded-lg
-                                     focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={2}
+                          value={homeScoreInput}
+                          onChange={(e) => setHomeScoreInput(e.target.value.replace(/\D/g, ''))}
+                          onFocus={(e) => e.target.select()}
+                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
+                                     focus:outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                           aria-label={`Gols ${match.homeTeam}`}
+                          placeholder="0"
                           autoFocus
                         />
                       </div>
-                      <span className="text-2xl font-bold text-dark-200 mt-5">×</span>
+                      <span className="text-2xl font-bold text-fifa-muted mt-5">×</span>
                       <div className="text-center">
-                        <div className="text-xs text-dark-500 mb-1 font-semibold">{match.awayTeam}</div>
+                        <div className="text-xs text-fifa-muted mb-1 font-semibold">{match.awayTeam}</div>
                         <input
-                          type="number"
-                          min="0"
-                          max="99"
-                          value={awayScore}
-                          onChange={(e) => setAwayScore(parseInt(e.target.value) || 0)}
-                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-dark-200 rounded-lg
-                                     focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={2}
+                          value={awayScoreInput}
+                          onChange={(e) => setAwayScoreInput(e.target.value.replace(/\D/g, ''))}
+                          onFocus={(e) => e.target.select()}
+                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
+                                     focus:outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                           aria-label={`Gols ${match.awayTeam}`}
+                          placeholder="0"
                         />
                       </div>
                     </div>
@@ -746,9 +754,25 @@ function RankingTab({ ranking, poolId }: { ranking: any[]; poolId: string }) {
     }
   };
 
+  const handleShareRanking = () => {
+    let text = '🏆 RANKING DO BOLÃO\n\n';
+    ranking.forEach((entry, index) => {
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+      text += `${medal} ${entry.userName} — ${entry.totalPoints} pts\n`;
+    });
+    text += `\n⚽ Bolão Futebol`;
+
+    if (navigator.share) {
+      navigator.share({ title: 'Ranking do Bolão', text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      alert('Ranking copiado para a área de transferência!');
+    }
+  };
+
   if (ranking.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-fifa-muted">
         Ranking ainda não disponível
       </div>
     );
@@ -790,12 +814,18 @@ function RankingTab({ ranking, poolId }: { ranking: any[]; poolId: string }) {
         </table>
       </div>
 
-      {/* Botão para ver palpites */}
-      <div className="text-center">
+      {/* Botões */}
+      <div className="flex justify-center gap-3 flex-wrap">
+        <button
+          onClick={handleShareRanking}
+          className="btn-gold text-xs"
+        >
+          📤 Compartilhar Ranking
+        </button>
         <button
           onClick={loadPredictions}
           disabled={loadingPreds}
-          className="btn-secondary"
+          className="btn-secondary text-xs"
         >
           {loadingPreds ? 'Carregando...' : showPredictions ? '🔼 Ocultar Palpites' : '🔽 Ver Palpites de Todos'}
         </button>
