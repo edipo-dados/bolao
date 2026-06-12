@@ -441,6 +441,7 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Carregar jogos
   const loadMatches = async () => {
@@ -535,129 +536,153 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
   const hasFilters = statusFilter !== 'ALL' || dateFrom || dateTo;
 
   return (
-    <div className="space-y-4">
-      {/* Filtros */}
-      <div className="card py-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-dark-500 mb-1">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="input-field py-2"
-              aria-label="Filtrar por status"
-            >
-              <option value="ALL">Todos</option>
-              <option value="SCHEDULED">Agendados</option>
-              <option value="FINISHED">Finalizados</option>
-              <option value="LIVE">Ao Vivo</option>
-            </select>
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-dark-500 mb-1">Data início</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="input-field py-2"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-dark-500 mb-1">Data fim</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="input-field py-2"
-            />
-          </div>
-          {hasFilters && (
-            <button onClick={clearFilters} className="btn-secondary py-2 text-xs whitespace-nowrap">
-              ✕ Limpar
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Contagem + última atualização + copiar */}
-      <div className="flex items-center justify-between text-xs text-fifa-muted flex-wrap gap-2">
-        <span>
+    <div className="space-y-3">
+      {/* Barra compacta: contagem + filtro toggle + copiar */}
+      <div className="flex items-center justify-between text-xs text-fifa-muted gap-2">
+        <span className="font-medium">
           {loading ? 'Carregando...' : `${matches.length} jogo${matches.length !== 1 ? 's' : ''}`}
         </span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isMember && Object.keys(myPredictions).length > 0 && (
-            <button onClick={handleCopyToOtherPools} className="text-gold-400 hover:text-gold-300 text-[11px] font-medium">
-              📋 Copiar palpites para outros bolões
+            <button onClick={handleCopyToOtherPools} className="text-gold-400 hover:text-gold-300 text-[11px] font-medium hidden sm:inline">
+              📋 Copiar palpites
             </button>
           )}
           {lastSync && (
-            <span>
+            <span className="hidden sm:inline">
               🔄 {new Date(lastSync).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              hasFilters
+                ? 'bg-gold-400/20 text-gold-400 border border-gold-400/30'
+                : 'bg-fifa-card text-fifa-muted border border-fifa-border hover:text-fifa-light'
+            }`}
+          >
+            🔍 Filtros{hasFilters ? ' ●' : ''}
+          </button>
         </div>
       </div>
+
+      {/* Filtros colapsáveis */}
+      {showFilters && (
+        <div className="card py-3 px-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label className="block text-[10px] font-semibold text-fifa-muted uppercase mb-0.5">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="input-field py-1.5 text-sm"
+                aria-label="Filtrar por status"
+              >
+                <option value="ALL">Todos</option>
+                <option value="SCHEDULED">Agendados</option>
+                <option value="FINISHED">Finalizados</option>
+                <option value="LIVE">Ao Vivo</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-fifa-muted uppercase mb-0.5">De</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="input-field py-1.5 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-fifa-muted uppercase mb-0.5">Até</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="input-field py-1.5 text-sm"
+              />
+            </div>
+          </div>
+          {hasFilters && (
+            <button onClick={clearFilters} className="mt-2 text-xs text-accent-red hover:underline">
+              ✕ Limpar filtros
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Copiar palpites (mobile - aparece abaixo) */}
+      {isMember && Object.keys(myPredictions).length > 0 && (
+        <div className="sm:hidden text-center">
+          <button onClick={handleCopyToOtherPools} className="text-gold-400 hover:text-gold-300 text-[11px] font-medium">
+            📋 Copiar palpites para outros bolões
+          </button>
+        </div>
+      )}
 
       {/* Lista de jogos */}
       {!loading && matches.length === 0 ? (
         <div className="text-center py-8 text-dark-400">
-          Nenhum jogo encontrado com esses filtros
+          Nenhum jogo encontrado
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {matches.map((match) => {
             const existing = myPredictions[match.id];
             const editable = canPredict(match);
             const isEditing = predicting === match.id;
 
             return (
-              <div key={match.id} className="card py-4">
-                {/* Linha do jogo */}
+              <div key={match.id} className="card py-3 px-3 sm:py-4 sm:px-4">
+                {/* Data e status - linha compacta */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-fifa-muted">
+                    {match.round && <span className="mr-1.5">{match.round} •</span>}
+                    {new Date(match.matchDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {match.status === 'FINISHED' && <span className="badge-green text-[10px]">Finalizado</span>}
+                  {match.status === 'LIVE' && <span className="badge-red text-[10px]">🔴 Ao Vivo</span>}
+                  {match.status === 'SCHEDULED' && !editable && (
+                    <span className="badge-red text-[10px]">🔒 Fechado</span>
+                  )}
+                  {editable && <span className="badge-blue text-[10px]">Aberto</span>}
+                </div>
+
+                {/* Times e placar */}
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-right w-28 sm:w-36 truncate text-sm">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <span className="font-semibold text-right flex-1 truncate text-sm">
                         {match.homeTeam}
                       </span>
                       {match.status === 'FINISHED' ? (
-                        <span className="font-extrabold text-lg text-gold-400 shrink-0">
+                        <span className="font-extrabold text-base sm:text-lg text-gold-400 shrink-0">
                           {match.homeScore} x {match.awayScore}
                         </span>
                       ) : match.status === 'LIVE' ? (
-                        <span className="shrink-0 flex items-center gap-1.5">
-                          <span className="font-extrabold text-lg text-accent-red">
+                        <span className="shrink-0 flex items-center gap-1">
+                          <span className="font-extrabold text-base sm:text-lg text-accent-red">
                             {match.homeScore ?? 0} x {match.awayScore ?? 0}
                           </span>
-                          <span className="w-2 h-2 bg-accent-red rounded-full animate-pulse" />
+                          <span className="w-1.5 h-1.5 bg-accent-red rounded-full animate-pulse" />
                         </span>
                       ) : (
                         <span className="text-fifa-muted text-sm shrink-0">vs</span>
                       )}
-                      <span className="font-semibold w-28 sm:w-36 truncate text-sm">
+                      <span className="font-semibold flex-1 truncate text-sm">
                         {match.awayTeam}
                       </span>
-                    </div>
-                    <div className="text-xs text-fifa-muted mt-1 flex items-center gap-2 flex-wrap">
-                      {match.round && <span>{match.round}</span>}
-                      <span>{new Date(match.matchDate).toLocaleString('pt-BR')}</span>
-                      {match.status === 'FINISHED' && <span className="badge-green">Finalizado</span>}
-                      {match.status === 'LIVE' && <span className="badge-red">🔴 Ao Vivo</span>}
-                      {match.status === 'SCHEDULED' && !editable && (
-                        <span className="badge-red">🔒 Fechado</span>
-                      )}
-                      {editable && <span className="badge-blue">Aberto</span>}
                     </div>
                   </div>
 
                   {/* Palpite existente ou botão */}
                   {isMember && !isEditing && (
-                    <div className="text-right shrink-0 ml-3">
+                    <div className="text-right shrink-0 ml-2">
                       {existing ? (
-                        <div>
-                          <div className="text-xs text-dark-400">Seu palpite</div>
-                          <div className="font-bold text-base">
-                            {existing.homeScore} x {existing.awayScore}
-                          </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-fifa-light">
+                            {existing.homeScore}x{existing.awayScore}
+                          </span>
                           {editable && (
                             <button
                               onClick={() => {
@@ -665,9 +690,9 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                                 setHomeScoreInput(String(existing.homeScore));
                                 setAwayScoreInput(String(existing.awayScore));
                               }}
-                              className="text-primary-600 hover:underline text-xs mt-0.5"
+                              className="text-primary-600 text-[11px]"
                             >
-                              ✏️ Editar
+                              ✏️
                             </button>
                           )}
                         </div>
@@ -678,7 +703,7 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                             setHomeScoreInput('');
                             setAwayScoreInput('');
                           }}
-                          className="btn-primary text-xs py-1.5 px-3"
+                          className="btn-primary text-[11px] py-1 px-2.5"
                         >
                           🎯 Palpitar
                         </button>
@@ -689,10 +714,10 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
 
                 {/* Painel de palpite expandido */}
                 {isEditing && (
-                  <div className="mt-4 pt-4 border-t border-dark-100">
-                    <div className="flex items-center justify-center gap-3">
+                  <div className="mt-3 pt-3 border-t border-dark-100">
+                    <div className="flex items-center justify-center gap-2 sm:gap-3">
                       <div className="text-center">
-                        <div className="text-xs text-fifa-muted mb-1 font-semibold">{match.homeTeam}</div>
+                        <div className="text-[10px] sm:text-xs text-fifa-muted mb-1 font-semibold truncate max-w-[80px] sm:max-w-none">{match.homeTeam}</div>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -701,16 +726,16 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                           value={homeScoreInput}
                           onChange={(e) => setHomeScoreInput(e.target.value.replace(/\D/g, ''))}
                           onFocus={(e) => e.target.select()}
-                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
+                          className="w-14 h-12 sm:w-16 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
                                      focus:outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                           aria-label={`Gols ${match.homeTeam}`}
                           placeholder="0"
                           autoFocus
                         />
                       </div>
-                      <span className="text-2xl font-bold text-fifa-muted mt-5">×</span>
+                      <span className="text-xl sm:text-2xl font-bold text-fifa-muted mt-4 sm:mt-5">×</span>
                       <div className="text-center">
-                        <div className="text-xs text-fifa-muted mb-1 font-semibold">{match.awayTeam}</div>
+                        <div className="text-[10px] sm:text-xs text-fifa-muted mb-1 font-semibold truncate max-w-[80px] sm:max-w-none">{match.awayTeam}</div>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -719,24 +744,24 @@ function MatchesTab({ leagueId, poolId, isMember }: { leagueId: string; poolId: 
                           value={awayScoreInput}
                           onChange={(e) => setAwayScoreInput(e.target.value.replace(/\D/g, ''))}
                           onFocus={(e) => e.target.select()}
-                          className="w-16 h-14 text-center text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
+                          className="w-14 h-12 sm:w-16 sm:h-14 text-center text-xl sm:text-2xl font-bold border-2 border-fifa-border rounded-lg bg-fifa-dark text-white
                                      focus:outline-none focus:border-gold-400 focus:ring-2 focus:ring-gold-400/20"
                           aria-label={`Gols ${match.awayTeam}`}
                           placeholder="0"
                         />
                       </div>
                     </div>
-                    <div className="flex justify-center gap-3 mt-4">
+                    <div className="flex justify-center gap-2 mt-3">
                       <button
                         onClick={() => handlePredict(match.id)}
                         disabled={saving}
-                        className="btn-primary px-6 py-2"
+                        className="btn-primary px-4 py-1.5 text-sm"
                       >
-                        {saving ? 'Salvando...' : existing ? '✓ Atualizar Palpite' : '✓ Confirmar Palpite'}
+                        {saving ? '...' : existing ? '✓ Atualizar' : '✓ Confirmar'}
                       </button>
                       <button
                         onClick={() => setPredicting(null)}
-                        className="btn-secondary px-4 py-2"
+                        className="btn-secondary px-3 py-1.5 text-sm"
                       >
                         Cancelar
                       </button>

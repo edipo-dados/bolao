@@ -132,6 +132,7 @@ export class PoolsService {
       include: {
         league: true,
         creator: { select: { id: true, name: true } },
+        participants: { select: { userId: true, status: true } },
         _count: { select: { participants: { where: { status: 'APPROVED' } } } },
       },
     });

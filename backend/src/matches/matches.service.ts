@@ -109,11 +109,33 @@ export class MatchesService {
       where.status = filters.status;
     }
 
-    return this.prisma.match.findMany({
+    const matches = await this.prisma.match.findMany({
       where,
-      orderBy: { matchDate: 'desc' },
       take: 100,
     });
+
+    // Ordenar: jogos próximos (SCHEDULED/TIMED) no topo (data crescente),
+    // depois os finalizados (data decrescente)
+    const statusPriority = { TIMED: 0, SCHEDULED: 0, LIVE: 1, IN_PLAY: 1, PAUSED: 1, FINISHED: 2 };
+
+    matches.sort((a, b) => {
+      const priorityA = statusPriority[a.status] ?? 1;
+      const priorityB = statusPriority[b.status] ?? 1;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Jogos próximos: data crescente (mais perto primeiro)
+      if (priorityA === 0) {
+        return new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime();
+      }
+
+      // Jogos finalizados/ao vivo: data decrescente (mais recente primeiro)
+      return new Date(b.matchDate).getTime() - new Date(a.matchDate).getTime();
+    });
+
+    return matches;
   }
 
   async findUpcoming(leagueId: string, limit = 20) {

@@ -17,10 +17,21 @@ export default function InvitePage() {
   useEffect(() => {
     api
       .getPoolByInvite(code)
-      .then(setPool)
+      .then((data) => {
+        setPool(data);
+
+        // Se o usuário já é participante aprovado, redireciona direto
+        if (user && data.participants) {
+          const participant = data.participants.find((p: any) => p.userId === user.id);
+          if (participant?.status === 'APPROVED') {
+            router.replace(`/pools/${data.id}`);
+            return;
+          }
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [code]);
+  }, [code, user]);
 
   const handleJoin = async () => {
     if (!user) {
@@ -51,6 +62,46 @@ export default function InvitePage() {
         <Link href="/" className="text-primary-600 hover:underline mt-4 inline-block">
           Voltar ao início
         </Link>
+      </div>
+    );
+  }
+
+  // Verificar status do participante
+  const participant = user ? pool.participants?.find((p: any) => p.userId === user.id) : null;
+  const isApproved = participant?.status === 'APPROVED';
+  const isPending = participant?.status === 'PENDING';
+
+  // Se já está aprovado (caso o redirect não tenha acontecido ainda)
+  if (isApproved) {
+    return (
+      <div className="max-w-md mx-auto mt-16">
+        <div className="card text-center">
+          <div className="text-4xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold mb-2">Você já participa!</h1>
+          <h2 className="text-xl text-primary-600 mb-4">{pool.name}</h2>
+          <Link href={`/pools/${pool.id}`} className="btn-primary inline-block w-full text-lg py-3">
+            Ir para o Bolão
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Se já solicitou entrada e está pendente
+  if (isPending) {
+    return (
+      <div className="max-w-md mx-auto mt-16">
+        <div className="card text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <h1 className="text-2xl font-bold mb-2">Solicitação Pendente</h1>
+          <h2 className="text-xl text-primary-600 mb-2">{pool.name}</h2>
+          <p className="text-gray-600 mb-4">
+            Sua solicitação já foi enviada. Aguarde a aprovação do administrador.
+          </p>
+          <Link href="/my-pools" className="btn-secondary inline-block w-full py-3">
+            Ver Meus Bolões
+          </Link>
+        </div>
       </div>
     );
   }
