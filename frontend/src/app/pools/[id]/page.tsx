@@ -200,6 +200,17 @@ export default function PoolDetailPage() {
     loadPool();
   }, [id]);
 
+  // Recalcular status quando user fica disponível depois do pool
+  useEffect(() => {
+    if (user && pool && pool.participants) {
+      const participant = pool.participants.find((p: any) => p.user?.id === user.id);
+      const isPoolAdmin = participant?.role === 'ADMIN' && participant?.status === 'APPROVED';
+      const isSuperAdmin = user.role === 'SUPER_ADMIN';
+      setIsAdmin(isPoolAdmin || isSuperAdmin);
+      setIsMember(participant?.status === 'APPROVED' || isSuperAdmin);
+    }
+  }, [user, pool]);
+
   useEffect(() => {
     if (pool) loadTabData();
   }, [tab, pool, isAdmin]);
@@ -250,16 +261,6 @@ export default function PoolDetailPage() {
       }
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  const handleJoin = async () => {
-    try {
-      await api.joinPool(id);
-      alert('Solicitação enviada! Aguarde aprovação.');
-      loadPool();
-    } catch (err: any) {
-      alert(err.message);
     }
   };
 
@@ -326,11 +327,6 @@ export default function PoolDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {user && !isMember && (
-              <button onClick={handleJoin} className="btn-primary">
-                Solicitar Entrada
-              </button>
-            )}
             {isMember && !isAdmin && (
               <button onClick={handleLeave} className="btn-danger text-sm">
                 Sair
