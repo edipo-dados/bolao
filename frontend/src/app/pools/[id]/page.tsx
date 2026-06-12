@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 
-type Tab = 'matches' | 'ranking' | 'predictions' | 'settings' | 'participants';
+type Tab = 'matches' | 'ranking' | 'predictions' | 'settings' | 'participants' | 'info';
 
 function PixInfoCard({ pool, showJoinWarning }: { pool: any; showJoinWarning: boolean }) {
   const pixPayload = generatePixPayload(pool.pixKey, pool.pixName, pool.entryFee);
@@ -303,6 +303,7 @@ export default function PoolDetailPage() {
     { key: 'matches', label: '⚽ Jogos', show: true },
     { key: 'ranking', label: '🏆 Ranking', show: true },
     { key: 'predictions', label: '🎯 Meus Palpites', show: isMember },
+    { key: 'info', label: 'ℹ️ Info', show: true },
     { key: 'participants', label: '👥 Participantes', show: true },
     { key: 'settings', label: '⚙️ Configurações', show: isAdmin },
   ];
@@ -352,40 +353,6 @@ export default function PoolDetailPage() {
         </div>
       </div>
 
-      {/* PIX e Contato — visível para não-membros ou todos */}
-      {pool.pixKey && (
-        <PixInfoCard pool={pool} showJoinWarning={!isMember} />
-      )}
-
-      {/* Contato do organizador */}
-      {(pool.contactPhone || pool.contactEmail || pool.creator) && (
-        <div className="card mb-6">
-          <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-3">Contato do organizador</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2 text-fifa-light">
-              <span>👤</span>
-              <span>{pool.creator?.name}</span>
-            </div>
-            {pool.contactPhone && (
-              <div className="flex items-center gap-2">
-                <span>📱</span>
-                <a href={`https://wa.me/${pool.contactPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-accent-green hover:underline">
-                  {pool.contactPhone}
-                </a>
-              </div>
-            )}
-            {pool.contactEmail && (
-              <div className="flex items-center gap-2">
-                <span>📧</span>
-                <a href={`mailto:${pool.contactEmail}`} className="text-accent-blue hover:underline">
-                  {pool.contactEmail}
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Tabs */}
       <div className="flex gap-1 mb-6 overflow-x-auto border-b border-gray-200">
         {tabs
@@ -422,6 +389,9 @@ export default function PoolDetailPage() {
       )}
       {tab === 'settings' && (
         <SettingsTab pool={pool} onUpdate={loadPool} />
+      )}
+      {tab === 'info' && (
+        <InfoTab pool={pool} isMember={isMember} />
       )}
     </div>
   );
@@ -1240,6 +1210,97 @@ function SettingsTab({ pool, onUpdate }: { pool: any; onUpdate: () => void }) {
         <p className="text-xs text-fifa-muted mb-3">Excluir o bolão é irreversível. Todos os dados serão perdidos.</p>
         <button onClick={handleDeletePool} className="btn-danger text-xs">Excluir Bolão</button>
       </div>
+    </div>
+  );
+}
+
+function InfoTab({ pool, isMember }: { pool: any; isMember: boolean }) {
+  return (
+    <div className="space-y-4">
+      {/* Informações gerais */}
+      <div className="card">
+        <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-3">Informações do Bolão</h3>
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-fifa-muted">Liga</span>
+            <span className="text-fifa-light font-medium">{pool.league?.name}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-fifa-muted">Tipo</span>
+            <span className="text-fifa-light">{pool.type === 'PUBLIC' ? '🌐 Público' : '🔒 Privado'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-fifa-muted">Participantes</span>
+            <span className="text-fifa-light">{pool._count?.participants || 0}</span>
+          </div>
+          {pool.entryFee && (
+            <div className="flex items-center justify-between">
+              <span className="text-fifa-muted">Taxa de entrada</span>
+              <span className="text-gold-400 font-bold">{pool.entryFee}</span>
+            </div>
+          )}
+          {pool.description && (
+            <div className="pt-2 border-t border-fifa-border">
+              <span className="text-fifa-muted text-xs block mb-1">Descrição</span>
+              <p className="text-fifa-light">{pool.description}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Regras de pontuação */}
+      {pool.rules && pool.rules.length > 0 && (
+        <div className="card">
+          <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-3">Regras de Pontuação</h3>
+          <div className="space-y-2">
+            {pool.rules.map((rule: any, index: number) => (
+              <div key={index} className="flex items-center justify-between text-sm py-1.5 border-b border-fifa-border last:border-0">
+                <div>
+                  <span className="text-fifa-light font-medium">{rule.name}</span>
+                  {rule.description && (
+                    <span className="text-fifa-muted text-xs ml-2">— {rule.description}</span>
+                  )}
+                </div>
+                <span className="text-gold-400 font-bold shrink-0 ml-2">{rule.points} pts</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PIX */}
+      {pool.pixKey && (
+        <PixInfoCard pool={pool} showJoinWarning={!isMember} />
+      )}
+
+      {/* Contato do organizador */}
+      {(pool.contactPhone || pool.contactEmail || pool.creator) && (
+        <div className="card">
+          <h3 className="text-xs font-semibold text-gold-400 uppercase tracking-widest mb-3">Contato do Organizador</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-fifa-light">
+              <span>👤</span>
+              <span>{pool.creator?.name}</span>
+            </div>
+            {pool.contactPhone && (
+              <div className="flex items-center gap-2">
+                <span>📱</span>
+                <a href={`https://wa.me/${pool.contactPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-accent-green hover:underline">
+                  {pool.contactPhone}
+                </a>
+              </div>
+            )}
+            {pool.contactEmail && (
+              <div className="flex items-center gap-2">
+                <span>📧</span>
+                <a href={`mailto:${pool.contactEmail}`} className="text-accent-blue hover:underline">
+                  {pool.contactEmail}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
